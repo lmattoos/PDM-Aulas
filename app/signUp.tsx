@@ -47,7 +47,7 @@ export default function SignUp() {
         resolver: yupResolver(schema),
     });
 
-    const { signUp } = useContext(AuthContext);
+    const {signUp}  = useContext(AuthContext);
     const [exibirSenha, setExibirSenha] = useState(true);
 	const [requisitando, setRequisitando] = useState(false);
 	const [dialogVisivel, setDialogVisivel] = useState(false);
