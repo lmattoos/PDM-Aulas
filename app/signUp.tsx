@@ -65,6 +65,10 @@ export default function SignUp() {
 			});
             setDialogVisivel(true);
             setRequisitando(false);
+        } else {
+            setMensagem({ tipo: "erro", mensagem: msg });
+			setDialogVisivel(true);
+			setRequisitando(false);
         }
     }
 
