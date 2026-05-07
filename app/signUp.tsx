@@ -76,8 +76,6 @@ export default function SignUp() {
 
   async function cadastrar(data: Usuario) {
     setRequisitando(true);
-    data.urlFoto =
-      "https://www.gravatar.com/avatar/205e460b479e2e5b48aec07710c08d50";
     const msg = await signUp(data, urlDevice);
     if (msg === "OK") {
       setMensagem({

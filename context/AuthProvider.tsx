@@ -1,4 +1,4 @@
-import { auth, firestore } from "@/firebase/firebaseinit";
+import { auth, firestore, storage } from "@/firebase/firebaseinit";
 import { Credencial } from "@/model/types";
 import { Usuario } from "@/model/Usuario";
 import {
@@ -9,8 +9,10 @@ import {
   signOut,
   UserCredential,
 } from "@firebase/auth";
+import * as ImageManipulator from "expo-image-manipulator";
 import * as SecureStore from "expo-secure-store";
 import { doc, setDoc } from "firebase/firestore";
+import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { createContext, useState } from "react";
 
 export const AuthContext = createContext({});
@@ -41,7 +43,7 @@ export const AuthProvider = ({ children }: any) => {
     }
   }
 
-  async function signUp(usuario: Usuario): Promise<string> {
+  async function signUp(usuario: Usuario, urlDevice: string): Promise<string> {
     try {
       if (usuario.email && usuario.senha) {
         const userCredencial = await createUserWithEmailAndPassword(
@@ -50,6 +52,16 @@ export const AuthProvider = ({ children }: any) => {
           usuario.senha,
         );
         if (userCredencial) {
+          if (urlDevice !== "") {
+            const urlStorage = await sendImageToStorage(
+              urlDevice,
+              userCredencial.user.uid,
+            );
+            if (!urlStorage) {
+              return "Erro ao cadastrar o usuário. Contate o suporte."; //não deixa salvar ou atualizar se não realizar todos os passos para enviar a imagem para o storage
+            }
+            usuario.urlFoto = urlStorage;
+          }
           await sendEmailVerification(userCredencial.user);
         }
         const usuarioFirestore = {
@@ -125,6 +137,34 @@ export const AuthProvider = ({ children }: any) => {
         return "Email em uso. Tente outro email.";
       default:
         return "Erro desconhecido. Contate o administrador";
+    }
+  }
+
+  async function sendImageToStorage(
+    urlDevice: string,
+    uid: string,
+  ): Promise<string | null> {
+    try {
+      const imageRedimencionada = await ImageManipulator.manipulateAsync(
+        urlDevice,
+        [{ resize: { width: 150, height: 150 } }],
+        { compress: 0.8, format: ImageManipulator.SaveFormat.PNG },
+      );
+
+      const data = await fetch(imageRedimencionada?.uri);
+      const blob = await data.blob();
+
+      const storageRef = ref(storage, `imagens/usuarios/${uid}/foto.png`);
+
+      await uploadBytes(storageRef, blob);
+
+      const url = await getDownloadURL(
+        ref(storage, `imagens/usuarios/${uid}/foto.png`),
+      );
+      return url;
+    } catch (error) {
+      console.error("Erro ao enviar imagem para o storage: ", error);
+      return null;
     }
   }
 
